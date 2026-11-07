@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-900: #0f1117;
+  --color-ink-800: #16181f;
+  --color-ink-700: #1e2029;
+  --color-ink-600: #2a2d3a;
+  --color-fog-100: #e8eaf0;
+  --color-fog-200: #c9cdd8;
+  --color-fog-300: #9aa0b4;
+  --color-fog-400: #6b7280;
+  --color-accent:  #5865f2;
+  --color-online:  #22c55e;
+  --color-idle:    #f59e0b;
+  --color-dnd:     #ef4444;
+  --color-danger:  #ef4444;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--color-ink-900);
+  color: var(--color-fog-100);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Компонентные классы */
+.btn-primary {
+  @apply px-4 py-2 rounded-lg bg-accent text-white font-semibold text-sm
+         hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed;
+}
+.btn-secondary {
+  @apply px-4 py-2 rounded-lg bg-ink-700 text-fog-100 font-medium text-sm
+         hover:bg-ink-600 active:scale-95 transition-all disabled:opacity-40;
+}
+.btn-danger {
+  @apply px-4 py-2 rounded-lg bg-danger text-white font-semibold text-sm
+         hover:brightness-110 active:scale-95 transition-all;
+}
+.input {
+  @apply w-full rounded-lg bg-ink-700 px-3 py-2.5 text-sm text-fog-100
+         placeholder:text-fog-400 outline-none ring-1 ring-white/8
+         focus:ring-accent/70 focus:bg-ink-600 transition-all;
+}
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2d3a transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #2a2d3a; border-radius: 2px; }
