@@ -2,26 +2,15 @@ import { useEffect } from 'react'
 import { useAuth } from '@/features/auth/useAuth'
 import { AuthScreen } from '@/features/auth/AuthScreen'
 import { AppShell } from '@/features/shell/AppShell'
-
-async function checkForUpdates() {
-  try {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    const update = await check()
-    if (update?.available) {
-      await update.downloadAndInstall()
-      const { relaunch } = await import('@tauri-apps/plugin-process')
-      await relaunch()
-    }
-  } catch {
-    // Updater недоступен в dev-режиме или pubkey не настроен — игнорируем
-  }
-}
+import { useUpdater } from '@/features/updater/useUpdater'
+import { UpdateBanner } from '@/features/updater/UpdateBanner'
 
 export default function App() {
   const auth = useAuth()
+  const updater = useUpdater()
 
   useEffect(() => {
-    void checkForUpdates()
+    void updater.check()
   }, [])
 
   if (auth.loading) {
@@ -32,6 +21,20 @@ export default function App() {
     )
   }
 
-  if (!auth.user || !auth.profile) return <AuthScreen />
-  return <AppShell profile={auth.profile} onSignOut={auth.signOut} />
+  return (
+    <>
+      {!auth.user || !auth.profile ? (
+        <AuthScreen />
+      ) : (
+        <AppShell profile={auth.profile} onSignOut={auth.signOut} />
+      )}
+      <UpdateBanner
+        status={updater.status}
+        version={updater.newVersion}
+        progress={updater.progress}
+        onInstall={updater.install}
+        onRelaunch={updater.relaunch}
+      />
+    </>
+  )
 }
