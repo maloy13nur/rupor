@@ -23,9 +23,9 @@ async function clearStaleCalls(myId: string, calleeId: string): Promise<void> {
     .in('status', ['ringing', 'active'])
   if (!stale?.length) return
   await Promise.all(
-    stale.map((c) =>
-      supabase.rpc('end_call', { p_call_id: c.id, p_status: 'ended' }).catch(() => null),
-    ),
+    stale.map(async (c) => {
+      try { await supabase.rpc('end_call', { p_call_id: c.id, p_status: 'ended' }) } catch { /* ignore */ }
+    }),
   )
 }
 

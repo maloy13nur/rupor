@@ -40,9 +40,9 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "PLACEHOLDER_PUBKEY",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQ5QUNGMEYxQ0REMUJGNzkKUldSNXY5SE44ZkNzU2IvQ3prYlgrR0RrNWc0K2pFcVpqdVQ2VmRVQzFXVDllakhjS3FVMkZybm0K",
       "endpoints": [
-        "https://github.com/GITHUB_OWNER/rupor/releases/latest/download/latest.json"
+        "https://github.com/maloy13nur/rupor/releases/latest/download/latest.json"
       ]
     }
   }

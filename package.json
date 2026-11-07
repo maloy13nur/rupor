@@ -15,6 +15,8 @@
     "@supabase/supabase-js": "^2.58.0",
     "@tauri-apps/api": "^2.9.0",
     "@tauri-apps/plugin-notification": "^2.3.1",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.14.1",
     "livekit-client": "^2.23.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
