@@ -64,9 +64,14 @@ export function useVoice(roomName: string, token: string): UseVoiceResult {
     // LiveKit Engine сбрасывает peerConnectionTimeout к дефолту (15с) при каждом
     // пересоздании движка (reconnect), поэтому патчим его после каждого Connected.
     const patchEngineTimeout = () => {
+      // RTCEngine delegates negotiate() to PCTransportManager which owns its own
+      // peerConnectionTimeout. Must patch both — patching only the engine has no effect
+      // on mic-publish renegotiation when TURN relay takes >15 s.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const eng = (room as any).engine
-      if (eng) eng.peerConnectionTimeout = 60_000
+      const eng = (room as any).engine as any
+      if (!eng) return
+      eng.peerConnectionTimeout = 60_000
+      if (eng.pcManager) eng.pcManager.peerConnectionTimeout = 60_000
     }
 
     const syncPeers = () => {
@@ -86,29 +91,35 @@ export function useVoice(roomName: string, token: string): UseVoiceResult {
       //  приводит к тому что сервер молчит в ответ на offer с треком)
       const pc =
         (room.engine?.pcManager?.publisher as { pc?: RTCPeerConnection } | undefined)?.pc
-      const enableMic = () => {
+      const enableMic = async (attempt = 0) => {
         if (cancelled) return
-        room.localParticipant.setMicrophoneEnabled(true).catch((e: unknown) => {
+        try {
+          await room.localParticipant.setMicrophoneEnabled(true)
+        } catch (e: unknown) {
           if (cancelled) return
           const msg = e instanceof Error ? e.message : String(e)
+          if (attempt < 3 && /timed out|timeout|negotiation/i.test(msg)) {
+            await new Promise<void>((r) => setTimeout(r, 3000))
+            return enableMic(attempt + 1)
+          }
           setError(`Микрофон недоступен: ${msg}`)
           setIsMuted(true)
-        })
+        }
       }
       if (!pc || pc.connectionState === 'connected') {
-        enableMic()
+        void enableMic()
       } else {
         const handler = () => {
           if (pc.connectionState === 'connected' || pc.connectionState === 'failed') {
             pc.removeEventListener('connectionstatechange', handler)
-            enableMic()
+            void enableMic()
           }
         }
         pc.addEventListener('connectionstatechange', handler)
         // Подстраховка на случай если событие уже было до нашей подписки
         setTimeout(() => {
           pc.removeEventListener('connectionstatechange', handler)
-          enableMic()
+          void enableMic()
         }, 2000)
       }
     })
