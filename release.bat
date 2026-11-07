@@ -19,8 +19,7 @@ echo.
 
 echo [1/5] Updating version in package.json and tauri.conf.json...
 call npm version !VER! --no-git-tag-version --allow-same-version 2>nul
-powershell -NoProfile -Command ^
-  "(Get-Content 'src-tauri\tauri.conf.json' -Raw) -replace '\"version\":\s*\"[^\"]+\"', '\"version\": \"!VER!\"' | Set-Content 'src-tauri\tauri.conf.json' -Encoding UTF8"
+node -e "const fs=require('fs');const p='src-tauri/tauri.conf.json';let s=fs.readFileSync(p,'utf8');if(s.charCodeAt(0)===0xFEFF)s=s.slice(1);s=s.replace(/\"version\":\s*\"[^\"]+\"/,'\"version\": \"!VER!\"');fs.writeFileSync(p,s,'utf8')"
 echo    Done.
 
 echo [2/5] Building app...
