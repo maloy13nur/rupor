@@ -64,14 +64,14 @@ export function IncomingCallModal({ callerProfile, onAccept, onDecline }: Incomi
   const name = callerProfile.display_name || callerProfile.username
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-xs space-y-5 rounded-2xl bg-ink-800 p-6 text-center shadow-2xl ring-1 ring-white/10">
-        <p className="text-xs uppercase tracking-widest text-fog-400">Входящий звонок</p>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-4 backdrop-blur-md">
+      <div className="w-full max-w-xs space-y-5 rounded-2xl border border-white/10 bg-ink-700 p-6 text-center shadow-2xl">
+        <p className="text-[10.5px] uppercase tracking-[0.18em] text-fog-400">Входящий звонок</p>
 
         <div className="flex flex-col items-center gap-3">
           {/* Пульсирующий аватар */}
           <div className="relative grid place-items-center">
-            <span className="absolute size-16 animate-ping rounded-full bg-online/30" />
+            <span className="absolute size-16 animate-ping rounded-full bg-accent/25" />
             <Avatar
               username={callerProfile.username}
               displayName={callerProfile.display_name}
@@ -80,7 +80,7 @@ export function IncomingCallModal({ callerProfile, onAccept, onDecline }: Incomi
             />
           </div>
           <div className="min-w-0">
-            <p className="truncate font-semibold text-fog-100">{name}</p>
+            <p className="truncate text-[15px] font-semibold text-fog-100">{name}</p>
             <p className="truncate text-xs text-fog-400">@{callerProfile.username}</p>
           </div>
         </div>
@@ -88,14 +88,18 @@ export function IncomingCallModal({ callerProfile, onAccept, onDecline }: Incomi
         <div className="flex justify-center gap-3">
           <button
             onClick={onDecline}
-            className="grid size-14 place-items-center rounded-full bg-dnd text-2xl text-white shadow-lg transition-all hover:bg-dnd/80 active:scale-90"
+            className="grid size-14 place-items-center rounded-full bg-dnd text-2xl text-white
+                       shadow-[0_10px_26px_-12px_rgb(239_68_68/0.9)] transition-all
+                       hover:brightness-110 active:scale-90"
             title="Отклонить"
           >
             📵
           </button>
           <button
             onClick={onAccept}
-            className="grid size-14 place-items-center rounded-full bg-online text-2xl text-white shadow-lg transition-all hover:bg-online/80 active:scale-90"
+            className="grid size-14 place-items-center rounded-full bg-online text-2xl text-white
+                       shadow-[0_10px_26px_-12px_rgb(34_197_94/0.9)] transition-all
+                       hover:brightness-110 active:scale-90"
             title="Принять"
           >
             📞

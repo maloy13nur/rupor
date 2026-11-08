@@ -177,89 +177,106 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
     <div className="flex h-screen overflow-hidden bg-ink-900">
 
       {/* ── Server Rail ── */}
-      <aside className="flex w-[68px] flex-col items-center gap-1.5 overflow-y-auto bg-ink-900 py-3 scrollbar-thin">
+      <aside className="flex w-[68px] flex-col items-center gap-2 overflow-y-auto border-r border-white/7 bg-ink-800 py-3.5 scrollbar-thin">
         {/* Кнопка «Друзья / DM» */}
         <button
           onClick={() => { setSelectedServerId(null); setView({ kind: 'friends' }) }}
           title="Друзья и личные сообщения"
-          className={`relative flex size-12 flex-col items-center justify-center gap-0.5 rounded-[50%] text-lg transition-all duration-200
+          className={`relative grid size-11 place-items-center rounded-[15px] text-base transition-all duration-200
             ${social
-              ? 'rounded-[30%] bg-accent text-white shadow-lg shadow-accent/30'
-              : 'bg-ink-700 text-fog-300 hover:rounded-[30%] hover:bg-accent hover:text-white'}`}
+              ? 'bg-grad text-white shadow-[0_8px_22px_-10px_rgb(var(--grad-a))] !rounded-[13px]'
+              : 'bg-ink-600 text-fog-300 hover:!rounded-[13px] hover:bg-accent/20 hover:text-fog-100'}`}
         >
           👥
+          {social && (
+            <span className="absolute -left-3 top-1/2 h-[22px] w-1 -translate-y-1/2 rounded-r bg-fog-100" />
+          )}
           {/* Бейдж входящего звонка */}
           {incomingCall && (
-            <span className="absolute right-0 top-0 size-3 animate-pulse rounded-full border-2 border-ink-900 bg-dnd" />
+            <span className="absolute right-0 top-0 size-3 animate-pulse rounded-full border-2 border-ink-800 bg-dnd" />
           )}
         </button>
 
-        <div className="my-1 h-px w-8 bg-white/8" />
+        <div className="my-0.5 h-px w-6 bg-white/13" />
 
         {/* Серверы */}
         {serversLoading ? (
           <div className="mt-2 size-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         ) : (
-          servers.map(({ server }) => (
-            <button
-              key={server.id}
-              onClick={() => selectServer(server.id)}
-              title={server.name}
-              className={`relative size-12 rounded-[50%] text-xs font-bold transition-all duration-200
-                ${selectedServerId === server.id && !social
-                  ? 'rounded-[30%] bg-accent text-white shadow-lg shadow-accent/30'
-                  : 'bg-ink-700 text-fog-200 hover:rounded-[30%] hover:bg-accent hover:text-white'}`}
-            >
-              {server.name.slice(0, 2).toUpperCase()}
-              {selectedServerId === server.id && !social && (
-                <span className="absolute -left-1 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r bg-white" />
-              )}
-            </button>
-          ))
+          servers.map(({ server }) => {
+            const active = selectedServerId === server.id && !social
+            return (
+              <button
+                key={server.id}
+                onClick={() => selectServer(server.id)}
+                title={server.name}
+                className={`relative grid size-11 place-items-center rounded-[15px] text-xs font-bold transition-all duration-200
+                  ${active
+                    ? 'bg-grad text-white shadow-[0_8px_22px_-10px_rgb(var(--grad-a))] !rounded-[13px]'
+                    : 'bg-ink-600 text-fog-200 hover:!rounded-[13px] hover:bg-accent/20 hover:text-fog-100'}`}
+              >
+                {server.name.slice(0, 2).toUpperCase()}
+                {active && (
+                  <span className="absolute -left-3 top-1/2 h-[22px] w-1 -translate-y-1/2 rounded-r bg-fog-100" />
+                )}
+              </button>
+            )
+          })
         )}
 
-        <div className="mt-auto flex flex-col gap-1.5 pb-2">
+        <div className="mt-auto flex flex-col gap-2 pb-1">
           <button
             onClick={() => { setShowNewServer(true); setModalErr(null) }}
             title="Создать сервер"
-            className="size-12 rounded-full bg-ink-700 text-xl font-light text-online transition-all hover:rounded-[30%] hover:bg-online hover:text-white"
+            className="grid size-10 place-items-center rounded-xl bg-ink-600 text-lg font-light text-online transition-all hover:!rounded-[13px] hover:bg-online hover:text-white"
           >+</button>
           <button
             onClick={() => { setShowJoin(true); setModalErr(null) }}
             title="Вступить по коду"
-            className="size-12 rounded-full bg-ink-700 text-base text-fog-400 transition-all hover:rounded-[30%] hover:bg-ink-600"
+            className="grid size-10 place-items-center rounded-xl bg-ink-600 text-sm text-fog-400 transition-all hover:!rounded-[13px] hover:bg-ink-700 hover:text-fog-200"
           >🔗</button>
         </div>
       </aside>
 
       {/* ── Сайдбар: каналы сервера ── */}
       {selectedServer && !social && (
-        <aside className="flex w-56 flex-col border-r border-white/5 bg-ink-800">
-          <header className="flex items-center justify-between border-b border-white/5 px-4 py-3">
-            <span className="truncate text-sm font-semibold text-fog-100">{selectedServer.server.name}</span>
+        <aside className="flex w-[250px] flex-col border-r border-white/7 bg-ink-700">
+          <header className="flex items-center justify-between gap-2 border-b border-white/7 px-4 py-3.5">
+            <span className="truncate text-[13.5px] font-semibold text-fog-100">{selectedServer.server.name}</span>
             <button
               onClick={() => { setShowNewChannel(true); setModalErr(null) }}
               title="Новый канал"
-              className="text-lg leading-none text-fog-400 hover:text-fog-100"
-            >+</button>
+              className="grid size-6 place-items-center rounded-md text-fog-400 transition-colors hover:bg-white/6 hover:text-fog-100"
+            >＋</button>
           </header>
 
-          <div className="flex-1 overflow-y-auto py-2 scrollbar-thin">
+          <div className="flex-1 overflow-y-auto px-2 py-2.5 scrollbar-thin">
             {channels.length === 0 && (
-              <p className="px-4 py-2 text-xs text-fog-400">Каналов нет</p>
+              <p className="px-2 py-2 text-xs text-fog-400">Каналов нет</p>
             )}
-            {channels.map((ch) => (
-              <button
+
+            {channels.some((c) => c.type === 'TEXT') && (
+              <GroupLabel>Текстовые</GroupLabel>
+            )}
+            {channels.filter((c) => c.type === 'TEXT').map((ch) => (
+              <ChannelButton
                 key={ch.id}
+                channel={ch}
+                active={activeChannelId === ch.id}
                 onClick={() => void handleChannelClick(ch)}
-                className={`mx-1 flex w-[calc(100%-0.5rem)] items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors
-                  ${activeChannelId === ch.id
-                    ? 'bg-ink-700 text-fog-100'
-                    : 'text-fog-400 hover:bg-ink-700/50 hover:text-fog-200'}`}
-              >
-                <span className="text-fog-400">{ch.type === 'VOICE' ? '🔊' : '#'}</span>
-                <span className="truncate">{ch.name}</span>
-              </button>
+              />
+            ))}
+
+            {channels.some((c) => c.type === 'VOICE') && (
+              <GroupLabel>Голосовые</GroupLabel>
+            )}
+            {channels.filter((c) => c.type === 'VOICE').map((ch) => (
+              <ChannelButton
+                key={ch.id}
+                channel={ch}
+                active={activeChannelId === ch.id}
+                onClick={() => void handleChannelClick(ch)}
+              />
             ))}
           </div>
 
@@ -269,14 +286,14 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
 
       {/* ── Сайдбар: переписки и друзья ── */}
       {social && (
-        <aside className="flex w-56 flex-col border-r border-white/5 bg-ink-800">
-          <header className="border-b border-white/5 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-fog-400">Личные сообщения</p>
+        <aside className="flex w-[250px] flex-col border-r border-white/7 bg-ink-700">
+          <header className="border-b border-white/7 px-4 py-3.5">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.11em] text-fog-400">Личные сообщения</p>
           </header>
 
-          <div className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="flex-1 overflow-y-auto px-2 py-2.5 scrollbar-thin">
             {conversations.length === 0 && (
-              <p className="p-4 text-xs text-fog-400">Нет переписок</p>
+              <p className="px-2 py-2 text-xs text-fog-400">Нет переписок</p>
             )}
             {conversations.map((conv) => {
               const isActive = view.kind === 'dm' && view.dmChannelId === conv.dm.id
@@ -284,8 +301,8 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
                 <button
                   key={conv.dm.id}
                   onClick={() => setView({ kind: 'dm', dmChannelId: conv.dm.id, friendProfile: conv.peer as Profile })}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2 transition-colors
-                    ${isActive ? 'bg-ink-700' : 'hover:bg-ink-700/50'}`}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors
+                    ${isActive ? 'bg-accent/14' : 'hover:bg-white/[.045]'}`}
                 >
                   <Avatar
                     username={conv.peer.username}
@@ -295,11 +312,11 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
                     size="sm"
                   />
                   <div className="min-w-0 flex-1 text-left">
-                    <p className="truncate text-xs font-medium text-fog-100">
+                    <p className={`truncate text-[12.5px] ${isActive ? 'font-medium text-fog-100' : 'text-fog-200'}`}>
                       {conv.peer.display_name || conv.peer.username}
                     </p>
                     {conv.lastMessage && (
-                      <p className="truncate text-[10px] text-fog-400">{conv.lastMessage}</p>
+                      <p className="truncate text-[10.5px] text-fog-400">{conv.lastMessage}</p>
                     )}
                   </div>
                 </button>
@@ -374,8 +391,8 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
 
         {/* Панель участников сервера — только для текстовых каналов */}
         {selectedServerId && view.kind === 'server' && (
-          <aside className="flex w-52 flex-shrink-0 flex-col border-l border-white/5 bg-ink-800">
-            <h3 className="border-b border-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-fog-400">
+          <aside className="flex w-[212px] flex-shrink-0 flex-col border-l border-white/7 bg-ink-700">
+            <h3 className="px-4 py-3.5 text-[10.5px] font-bold uppercase tracking-[0.11em] text-fog-400">
               Участники {membersLoading ? '…' : `(${members.length}${hasMore ? '+' : ''})`}
             </h3>
             <VirtualList
@@ -385,7 +402,7 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
               onEndReached={loadMore}
               className="flex-1"
               renderItem={(m) => (
-                <div className="flex items-center gap-2 px-3 py-2">
+                <div className="flex items-center gap-2.5 px-4 py-1.5 hover:bg-white/[.03]">
                   <Avatar
                     username={m.username}
                     displayName={m.display_name}
@@ -394,7 +411,7 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
                     size="sm"
                   />
                   <div className="min-w-0">
-                    <p className="truncate text-xs text-fog-200">{m.display_name || m.username}</p>
+                    <p className="truncate text-[12.5px] text-fog-200">{m.display_name || m.username}</p>
                     <p className="text-[10px] text-fog-400">{m.role}</p>
                   </div>
                 </div>
@@ -416,13 +433,13 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
 
       {/* ── Ошибка звонка ── */}
       {callError && (
-        <div
-          className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-dnd px-4 py-2.5
-                     text-sm text-white shadow-xl cursor-pointer"
+        <button
+          className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-danger/30 bg-danger px-4 py-2.5
+                     text-sm text-white shadow-2xl"
           onClick={() => setCallError(null)}
         >
           {callError}
-        </div>
+        </button>
       )}
 
       {/* ── Модальные окна ── */}
@@ -468,10 +485,44 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
   )
 }
 
+// ── Заголовок группы каналов ────────────────────────────────
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-3 text-[10.5px] font-bold uppercase tracking-[0.11em] text-fog-400">
+      <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" className="opacity-60">
+        <path d="M12 5l7 9H5z" />
+      </svg>
+      {children}
+    </div>
+  )
+}
+
+// ── Кнопка канала ───────────────────────────────────────────
+function ChannelButton({ channel, active, onClick }: {
+  channel: Channel
+  active: boolean
+  onClick(): void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13.5px] transition-colors
+        ${active
+          ? 'bg-accent/14 font-medium text-fog-100'
+          : 'text-fog-300 hover:bg-white/[.045] hover:text-fog-100'}`}
+    >
+      <span className={`w-4 text-center text-xs ${active ? 'text-accent' : 'text-fog-400'}`}>
+        {channel.type === 'VOICE' ? '🔊' : '#'}
+      </span>
+      <span className="truncate">{channel.name}</span>
+    </button>
+  )
+}
+
 // ── Строка профиля внизу сайдбара ───────────────────────────
 function ProfileBar({ profile, onSignOut }: { profile: Profile; onSignOut(): void }) {
   return (
-    <div className="flex items-center gap-2 border-t border-white/5 bg-ink-800/80 px-3 py-3">
+    <div className="flex items-center gap-2.5 border-t border-white/7 bg-black/20 px-3 py-2.5">
       <Avatar
         username={profile.username}
         displayName={profile.display_name}
@@ -479,11 +530,11 @@ function ProfileBar({ profile, onSignOut }: { profile: Profile; onSignOut(): voi
         status={profile.status}
         size="sm"
       />
-      <span className="min-w-0 flex-1 truncate text-xs text-fog-200">
+      <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-fog-200">
         {profile.display_name || profile.username}
       </span>
       <button onClick={onSignOut} title="Выйти"
-        className="text-sm text-fog-400 transition-colors hover:text-danger">⬡</button>
+        className="rounded-md p-1.5 text-sm text-fog-400 transition-colors hover:bg-danger/14 hover:text-red-400">⏻</button>
     </div>
   )
 }

@@ -1,19 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ink-900: #0f1117;
-  --color-ink-800: #16181f;
-  --color-ink-700: #1e2029;
-  --color-ink-600: #2a2d3a;
-  --color-fog-100: #e8eaf0;
-  --color-fog-200: #c9cdd8;
-  --color-fog-300: #9aa0b4;
-  --color-fog-400: #6b7280;
-  --color-accent:  #5865f2;
-  --color-online:  #22c55e;
-  --color-idle:    #f59e0b;
-  --color-dnd:     #ef4444;
-  --color-danger:  #ef4444;
+  /* ── поверхности ── */
+  --color-ink-900: #07080d;
+  --color-ink-800: #10131c;
+  --color-ink-700: #171b26;
+  --color-ink-600: #222836;
+
+  /* ── текст ── */
+  --color-fog-100: #eceef5;
+  --color-fog-200: #c3c9d8;
+  --color-fog-300: #a3aabd;
+  --color-fog-400: #697083;
+
+  /* ── бренд ── */
+  --color-accent: #7c5cff;
+  --color-accent-2: #2ad4e8;
+  --color-online: #22c55e;
+  --color-idle: #f59e0b;
+  --color-dnd: #ef4444;
+  --color-danger: #ef4444;
+}
+
+/* Градиент бренда — отдельными каналами, чтобы работали градиенты с альфой */
+:root {
+  --grad-a: 124 92 255;
+  --grad-b: 42 212 232;
+  --line: rgb(255 255 255 / 0.07);
+  --line-2: rgb(255 255 255 / 0.13);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,7 +35,7 @@
 body {
   background: var(--color-ink-900);
   color: var(--color-fog-100);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: ui-sans-serif, system-ui, 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -29,28 +43,68 @@ body {
   user-select: none;
 }
 
-/* Компонентные классы */
+/* ══════════════ Компонентные классы ══════════════ */
+
 .btn-primary {
-  @apply px-4 py-2 rounded-lg bg-accent text-white font-semibold text-sm
-         hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed;
+  @apply px-4 py-2.5 rounded-[10px] font-semibold text-sm text-white
+         transition-all active:scale-[.99] disabled:opacity-40 disabled:cursor-not-allowed;
+  background-image: linear-gradient(135deg, rgb(var(--grad-a)), rgb(var(--grad-b)));
+  box-shadow: 0 10px 28px -12px rgb(var(--grad-a) / 0.9);
 }
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.07);
+  box-shadow: 0 16px 34px -12px rgb(var(--grad-a));
+}
+
 .btn-secondary {
-  @apply px-4 py-2 rounded-lg bg-ink-700 text-fog-100 font-medium text-sm
-         hover:bg-ink-600 active:scale-95 transition-all disabled:opacity-40;
+  @apply px-4 py-2.5 rounded-[10px] bg-ink-700 text-fog-100 font-medium text-sm
+         transition-all hover:bg-ink-600 active:scale-[.99] disabled:opacity-40;
 }
+
 .btn-danger {
-  @apply px-4 py-2 rounded-lg bg-danger text-white font-semibold text-sm
-         hover:brightness-110 active:scale-95 transition-all;
+  @apply px-4 py-2.5 rounded-[10px] bg-danger text-white font-semibold text-sm
+         transition-all hover:brightness-110 active:scale-[.99];
 }
+
 .input {
-  @apply w-full rounded-lg bg-ink-700 px-3 py-2.5 text-sm text-fog-100
-         placeholder:text-fog-400 outline-none ring-1 ring-white/8
-         focus:ring-accent/70 focus:bg-ink-600 transition-all;
+  @apply w-full rounded-[10px] bg-ink-800 px-3.5 py-3 text-sm text-fog-100
+         placeholder:text-fog-400 outline-none transition-all;
+  border: 1px solid var(--line-2);
 }
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: #2a2d3a transparent;
+.input:focus {
+  background: var(--color-ink-700);
+  border-color: rgb(var(--grad-a) / 0.8);
+  box-shadow: 0 0 0 3px rgb(var(--grad-a) / 0.16);
 }
-.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+
+/* ══════════════ Градиенты бренда ══════════════ */
+
+.bg-grad {
+  background-image: linear-gradient(135deg, rgb(var(--grad-a)), rgb(var(--grad-b)));
+}
+.bg-grad-soft {
+  background-image: linear-gradient(140deg, rgb(var(--grad-a) / 0.22), rgb(var(--grad-b) / 0.14));
+}
+.text-grad {
+  background-image: linear-gradient(120deg, rgb(var(--grad-a)), rgb(var(--grad-b)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ══════════════ Скроллбар ══════════════ */
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: #222836 transparent; }
+.scrollbar-thin::-webkit-scrollbar { width: 8px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: #2a2d3a; border-radius: 2px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #222836; border-radius: 99px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #2e3547; }
+
+/* ══════════════ Анимации ══════════════ */
+@keyframes eq {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+.eq-bar {
+  transform-origin: bottom;
+  animation: eq 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}

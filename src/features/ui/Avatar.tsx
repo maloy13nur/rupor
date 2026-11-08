@@ -31,8 +31,8 @@ export function Avatar({ username, displayName, avatarUrl, status, size = 'md' }
         <img src={avatarUrl} alt={username}
           className={`${s.avatar} rounded-full object-cover`} />
       ) : (
-        <div className={`${s.avatar} rounded-full bg-accent/20 text-accent font-semibold
-                         grid place-items-center select-none`}>
+        <div className={`${s.avatar} rounded-full bg-grad-soft text-fog-100 font-semibold
+                         ring-1 ring-white/10 grid place-items-center select-none`}>
           {initials}
         </div>
       )}

@@ -13,15 +13,12 @@ export function UpdateBanner({ status, version, progress, onInstall, onRelaunch 
 
   if (status === 'available') {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 border-t border-ink-700 bg-ink-850 px-4 py-2.5 shadow-lg">
-        <span className="size-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
-        <span className="flex-1 text-xs text-fog-300">
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 border-t border-white/10 bg-ink-700/95 px-5 py-3 shadow-[0_-12px_32px_-16px_rgb(0_0_0/0.9)] backdrop-blur-md">
+        <span className="size-2 flex-shrink-0 animate-pulse rounded-full bg-online" />
+        <span className="flex-1 text-[12.5px] text-fog-200">
           Доступно обновление{version ? ` v${version}` : ''}
         </span>
-        <button
-          onClick={onInstall}
-          className="rounded-md bg-accent px-3 py-1 text-xs font-semibold text-white hover:brightness-110 active:scale-95 transition-all"
-        >
+        <button onClick={onInstall} className="btn-primary !px-3.5 !py-1.5 !text-xs">
           Обновить
         </button>
       </div>
@@ -30,13 +27,14 @@ export function UpdateBanner({ status, version, progress, onInstall, onRelaunch 
 
   if (status === 'downloading') {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-ink-700 bg-ink-850 px-4 py-2.5 shadow-lg">
-        <div className="mb-1.5 text-xs text-fog-300">Загрузка обновления… {progress}%</div>
-        <div className="h-1 w-full overflow-hidden rounded-full bg-ink-700">
-          <div
-            className="h-full rounded-full bg-accent transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-ink-700/95 px-5 py-3 shadow-[0_-12px_32px_-16px_rgb(0_0_0/0.9)] backdrop-blur-md">
+        <div className="mb-1.5 flex justify-between text-[12.5px] text-fog-200">
+          <span>Загрузка обновления…</span>
+          <span className="tabular-nums text-fog-400">{progress}%</span>
+        </div>
+        <div className="h-1 w-full overflow-hidden rounded-full bg-ink-900">
+          <div className="bg-grad h-full rounded-full transition-all duration-300"
+               style={{ width: `${progress}%` }} />
         </div>
       </div>
     )
@@ -44,11 +42,12 @@ export function UpdateBanner({ status, version, progress, onInstall, onRelaunch 
 
   if (status === 'ready') {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 border-t border-ink-700 bg-ink-850 px-4 py-2.5 shadow-lg">
-        <span className="flex-1 text-xs text-fog-300">Обновление загружено — перезапустите приложение</span>
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 border-t border-white/10 bg-ink-700/95 px-5 py-3 shadow-[0_-12px_32px_-16px_rgb(0_0_0/0.9)] backdrop-blur-md">
+        <span className="flex-1 text-[12.5px] text-fog-200">Обновление загружено — перезапустите приложение</span>
         <button
           onClick={onRelaunch}
-          className="rounded-md bg-green-600 px-3 py-1 text-xs font-semibold text-white hover:brightness-110 active:scale-95 transition-all"
+          className="rounded-lg bg-online px-3.5 py-1.5 text-xs font-semibold text-white
+                     transition-all hover:brightness-110 active:scale-95"
         >
           Перезапустить
         </button>
@@ -58,8 +57,8 @@ export function UpdateBanner({ status, version, progress, onInstall, onRelaunch 
 
   if (status === 'error') {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 border-t border-ink-700 bg-ink-850 px-4 py-2.5 shadow-lg">
-        <span className="flex-1 text-xs text-fog-400">Не удалось загрузить обновление</span>
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 border-t border-white/10 bg-ink-700/95 px-5 py-3 shadow-[0_-12px_32px_-16px_rgb(0_0_0/0.9)] backdrop-blur-md">
+        <span className="flex-1 text-[12.5px] text-fog-400">Не удалось загрузить обновление</span>
       </div>
     )
   }

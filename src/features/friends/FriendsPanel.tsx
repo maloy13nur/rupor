@@ -63,23 +63,23 @@ export function FriendsPanel({ myId, onOpenDm, onCall }: FriendsPanelProps) {
   return (
     <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-ink-900">
       {/* Заголовок */}
-      <header className="flex items-center justify-between border-b border-white/5 bg-ink-800 px-4 py-3">
-        <h2 className="text-sm font-semibold text-fog-100">Друзья</h2>
+      <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-white/7 bg-ink-800/85 px-5 backdrop-blur-md">
+        <h2 className="text-[14.5px] font-semibold text-fog-100">Друзья</h2>
         <button
           onClick={() => void refresh()}
           disabled={loading}
           title="Обновить"
-          className="text-fog-400 hover:text-fog-100 disabled:opacity-40 transition-colors text-sm"
+          className="rounded-md p-1.5 text-fog-400 transition-colors hover:bg-white/6 hover:text-fog-100 disabled:opacity-40"
         >
           ⟳
         </button>
       </header>
 
       {/* Добавить по нику */}
-      <div className="space-y-1.5 border-b border-white/5 bg-ink-800/50 px-4 py-3">
+      <div className="space-y-1.5 border-b border-white/7 bg-ink-800/40 px-5 py-3.5">
         <div className="flex gap-2">
           <input
-            className="input min-w-0 flex-1 text-xs"
+            className="input min-w-0 flex-1 !py-2 !text-xs"
             placeholder="Добавить по нику (mark_volkov)"
             value={addInput}
             onChange={(e) => setAddInput(e.target.value)}
@@ -88,7 +88,7 @@ export function FriendsPanel({ myId, onOpenDm, onCall }: FriendsPanelProps) {
           <button
             onClick={() => void handleAdd()}
             disabled={addBusy || !addInput.trim()}
-            className="btn-primary shrink-0 px-3 text-xs"
+            className="btn-primary shrink-0 !px-3 !py-2 !text-xs"
           >
             {addBusy ? '…' : 'Добавить'}
           </button>
@@ -97,22 +97,22 @@ export function FriendsPanel({ myId, onOpenDm, onCall }: FriendsPanelProps) {
       </div>
 
       {/* Вкладки */}
-      <div className="flex border-b border-white/5">
+      <div className="flex border-b border-white/7 px-2">
         <button
           onClick={() => setTab('friends')}
-          className={`flex-1 py-2 text-xs font-medium transition-colors
-            ${tab === 'friends' ? 'text-fog-100 border-b-2 border-accent' : 'text-fog-400 hover:text-fog-200'}`}
+          className={`flex-1 rounded-t-md py-2.5 text-xs font-semibold transition-colors
+            ${tab === 'friends' ? 'text-fog-100 shadow-[inset_0_-2px_0_0_var(--color-accent)]' : 'text-fog-400 hover:text-fog-200'}`}
         >
           Все ({friends.length})
         </button>
         <button
           onClick={() => setTab('pending')}
-          className={`relative flex-1 py-2 text-xs font-medium transition-colors
-            ${tab === 'pending' ? 'text-fog-100 border-b-2 border-accent' : 'text-fog-400 hover:text-fog-200'}`}
+          className={`relative flex-1 rounded-t-md py-2.5 text-xs font-semibold transition-colors
+            ${tab === 'pending' ? 'text-fog-100 shadow-[inset_0_-2px_0_0_var(--color-accent)]' : 'text-fog-400 hover:text-fog-200'}`}
         >
           Заявки
           {pending.length > 0 && (
-            <span className="absolute right-4 top-1 grid size-4 place-items-center rounded-full bg-dnd text-[9px] text-white">
+            <span className="absolute right-3 top-1.5 grid size-4 place-items-center rounded-full bg-dnd text-[9px] font-bold text-white">
               {pending.length}
             </span>
           )}
@@ -132,7 +132,7 @@ export function FriendsPanel({ myId, onOpenDm, onCall }: FriendsPanelProps) {
             {friends.map(({ friendship, profile }) => (
               <div
                 key={friendship.id}
-                className="group flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-ink-800/50"
+                className="group flex items-center gap-3 px-5 py-2.5 transition-colors hover:bg-white/[.03]"
               >
                 <Avatar
                   username={profile.username}
@@ -142,7 +142,7 @@ export function FriendsPanel({ myId, onOpenDm, onCall }: FriendsPanelProps) {
                   size="md"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-fog-100">
+                  <p className="truncate text-[13.5px] font-semibold text-fog-100">
                     {profile.display_name || profile.username}
                   </p>
                   <p className="truncate text-xs text-fog-400">@{profile.username}</p>
@@ -182,7 +182,7 @@ export function FriendsPanel({ myId, onOpenDm, onCall }: FriendsPanelProps) {
             {pending.map(({ friendship, profile }) => (
               <div
                 key={friendship.id}
-                className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-ink-800/50"
+                className="flex items-center gap-3 px-5 py-2.5 transition-colors hover:bg-white/[.03]"
               >
                 <Avatar
                   username={profile.username}
@@ -192,7 +192,7 @@ export function FriendsPanel({ myId, onOpenDm, onCall }: FriendsPanelProps) {
                   size="md"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-fog-100">
+                  <p className="truncate text-[13.5px] font-semibold text-fog-100">
                     {profile.display_name || profile.username}
                   </p>
                   <p className="truncate text-xs text-fog-400">@{profile.username}</p>
@@ -200,14 +200,14 @@ export function FriendsPanel({ myId, onOpenDm, onCall }: FriendsPanelProps) {
                 <div className="flex gap-1">
                   <button
                     onClick={() => void handleAccept(friendship.id)}
-                    className="grid size-7 place-items-center rounded-full bg-online/20 text-sm text-online transition-colors hover:bg-online hover:text-white"
+                    className="grid size-7 place-items-center rounded-lg bg-online/16 text-sm text-online transition-colors hover:bg-online hover:text-white"
                     title="Принять"
                   >
                     ✓
                   </button>
                   <button
                     onClick={() => void handleRemove(friendship.id)}
-                    className="grid size-7 place-items-center rounded-full bg-dnd/20 text-sm text-dnd transition-colors hover:bg-dnd hover:text-white"
+                    className="grid size-7 place-items-center rounded-lg bg-dnd/16 text-sm text-dnd transition-colors hover:bg-dnd hover:text-white"
                     title="Отклонить"
                   >
                     ✕
@@ -234,10 +234,10 @@ function ActionBtn({
     <button
       title={title}
       onClick={onClick}
-      className={`grid size-7 place-items-center rounded-full text-sm transition-colors
+      className={`grid size-7 place-items-center rounded-lg text-sm transition-colors
         ${danger
-          ? 'bg-dnd/20 text-dnd hover:bg-dnd hover:text-white'
-          : 'bg-ink-700 text-fog-400 hover:bg-ink-600 hover:text-fog-100'}`}
+          ? 'bg-dnd/16 text-dnd hover:bg-dnd hover:text-white'
+          : 'bg-ink-600 text-fog-400 hover:bg-ink-700 hover:text-fog-100'}`}
     >
       {children}
     </button>

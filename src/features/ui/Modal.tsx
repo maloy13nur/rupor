@@ -17,11 +17,11 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
 
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm"
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/65 backdrop-blur-md"
          onClick={onClose}>
-      <div className="w-full max-w-sm rounded-xl bg-ink-800 p-5 shadow-xl ring-1 ring-white/5"
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-ink-700 p-5 shadow-2xl"
            onClick={(e) => e.stopPropagation()}>
-        <h2 className="mb-4 text-base font-semibold text-fog-100">{title}</h2>
+        <h2 className="mb-4 text-[15px] font-semibold tracking-tight text-fog-100">{title}</h2>
         {children}
       </div>
     </div>

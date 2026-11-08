@@ -108,10 +108,10 @@ export function DmView({ dmChannelId, profile, friendProfile, onCall }: DmViewPr
   }
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-ink-900">
       {/* Заголовок */}
-      <header className="flex items-center justify-between gap-2 border-b border-white/5 bg-ink-800 px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
+      <header className="flex h-14 flex-shrink-0 items-center justify-between gap-2 border-b border-white/7 bg-ink-800/85 px-5 backdrop-blur-md">
+        <div className="flex min-w-0 items-center gap-2.5">
           <Avatar
             username={friendProfile.username}
             displayName={friendProfile.display_name}
@@ -119,21 +119,21 @@ export function DmView({ dmChannelId, profile, friendProfile, onCall }: DmViewPr
             status={friendProfile.status}
             size="sm"
           />
-          <span className="truncate text-sm font-semibold text-fog-100">
+          <span className="truncate text-[14.5px] font-semibold text-fog-100">
             {friendProfile.display_name || friendProfile.username}
           </span>
         </div>
         <button
           onClick={onCall}
           title="Голосовой звонок"
-          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-online/15 px-3 py-1.5 text-sm font-medium text-online transition-colors hover:bg-online hover:text-white"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-online/14 px-3 py-1.5 text-[13px] font-medium text-online transition-colors hover:bg-online hover:text-white"
         >
           📞 Позвонить
         </button>
       </header>
 
       {/* Сообщения */}
-      <div className="flex-1 space-y-1 overflow-y-auto px-4 py-3 scrollbar-thin">
+      <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-5 pb-2 pt-5 scrollbar-thin">
         {loading && <p className="text-xs text-fog-400">Загрузка…</p>}
         {!loading && messages.length === 0 && (
           <p className="text-xs text-fog-400">Начните переписку — это личный чат.</p>
@@ -144,7 +144,7 @@ export function DmView({ dmChannelId, profile, friendProfile, onCall }: DmViewPr
           return (
             <div
               key={msg.id}
-              className="group -mx-2 flex items-start gap-3 rounded px-2 py-1 hover:bg-ink-800/40"
+              className="group flex items-start gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-white/[.028]"
             >
               <Avatar
                 username={author.username}
@@ -153,18 +153,18 @@ export function DmView({ dmChannelId, profile, friendProfile, onCall }: DmViewPr
                 size="sm"
               />
               <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="truncate text-sm font-medium text-fog-100">
+                <div className="mb-0.5 flex items-baseline gap-2">
+                  <span className="truncate text-[13.5px] font-semibold text-fog-100">
                     {author.display_name || author.username}
                   </span>
-                  <span className="shrink-0 text-[10px] text-fog-400">
+                  <span className="shrink-0 text-[10.5px] tabular-nums text-fog-400">
                     {formatMessageTime(msg.created_at)}
                   </span>
                   {msg.id.startsWith('local-') && (
-                    <span className="shrink-0 text-[10px] text-fog-400">отправка…</span>
+                    <span className="shrink-0 text-[10.5px] text-fog-400">отправка…</span>
                   )}
                 </div>
-                <p className="whitespace-pre-wrap break-words text-sm text-fog-200">{msg.content}</p>
+                <p className="whitespace-pre-wrap break-words text-[13.5px] leading-relaxed text-fog-200">{msg.content}</p>
               </div>
             </div>
           )
@@ -173,12 +173,13 @@ export function DmView({ dmChannelId, profile, friendProfile, onCall }: DmViewPr
       </div>
 
       {/* Ввод */}
-      <div className="border-t border-white/5 bg-ink-800 px-4 py-3">
+      <div className="px-5 pb-4 pt-1.5">
         {sendErr && <p className="mb-1.5 text-xs text-danger">{sendErr}</p>}
-        <div className="flex items-end gap-2 rounded-xl bg-ink-700 px-4 py-2">
+        <div className="flex items-end gap-2 rounded-[14px] border border-white/13 bg-ink-800 py-1.5 pl-3.5 pr-2
+                        transition-all focus-within:border-accent/70 focus-within:shadow-[0_0_0_3px_rgb(var(--grad-a)/0.13)]">
           <textarea
             rows={1}
-            className="flex-1 resize-none bg-transparent text-sm text-fog-100 outline-none placeholder:text-fog-400"
+            className="flex-1 resize-none bg-transparent py-1 text-[13.5px] text-fog-100 outline-none placeholder:text-fog-400"
             placeholder={`Написать ${friendProfile.display_name || friendProfile.username}…`}
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -187,9 +188,11 @@ export function DmView({ dmChannelId, profile, friendProfile, onCall }: DmViewPr
           <button
             onClick={() => void send()}
             disabled={!text.trim()}
-            className="pb-0.5 text-accent transition-colors hover:text-accent/80 disabled:opacity-30"
+            title="Отправить"
+            className="grid size-8 shrink-0 place-items-center rounded-[9px] bg-grad text-white
+                       transition-transform hover:scale-105 disabled:opacity-30 disabled:hover:scale-100"
           >
-            ➤
+            ↑
           </button>
         </div>
       </div>
