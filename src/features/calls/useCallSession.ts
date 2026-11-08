@@ -48,15 +48,17 @@ export function useCallSession(callId: string | null): UseCallSessionResult {
       )
       .subscribe()
 
-    // Fallback-поллинг — срабатывает если Realtime не доставил UPDATE
+    // Fallback-поллинг — срабатывает если Realtime не доставил UPDATE.
+    // Останавливаемся только на конечных статусах: 'active' не терминален,
+    // иначе звонящий не заметит, что собеседник потом положил трубку.
     const poll = setInterval(async () => {
       if (!alive) return
-      const terminal: CallStatus[] = ['ended', 'declined', 'missed', 'active']
+      const terminal: CallStatus[] = ['ended', 'declined', 'missed']
       if (statusRef.current && terminal.includes(statusRef.current)) return
       const { data } = await supabase
         .from('calls').select('status').eq('id', callId).maybeSingle()
       if (data) applyStatus(data.status as CallStatus)
-    }, 3000)
+    }, 2000)
 
     return () => {
       alive = false

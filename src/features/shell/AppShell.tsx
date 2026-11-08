@@ -1,5 +1,5 @@
 // src/features/shell/AppShell.tsx
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react'
 import type { Profile, Channel } from '@/lib/db-types'
 import { useServersTree } from '@/features/groups/useServersTree'
 import { useMembers } from '@/features/groups/useMembers'
@@ -7,17 +7,25 @@ import { createServer, createChannel, joinServerByCode } from '@/features/groups
 import { Avatar } from '@/features/ui/Avatar'
 import { Modal } from '@/features/ui/Modal'
 import { VirtualList } from '@/features/ui/VirtualList'
-import { VoiceRoom } from '@/features/voice/VoiceRoom'
 import { joinVoiceChannel, leaveVoiceChannel } from '@/features/voice/voiceChannels'
 import { ChatView } from '@/features/chat/ChatView'
 import { FriendsPanel } from '@/features/friends/FriendsPanel'
 import { DmView } from '@/features/dm/DmView'
 import { useDmChannels } from '@/features/dm/useDmChannels'
 import { IncomingCallModal } from '@/features/calls/IncomingCallModal'
-import { CallView } from '@/features/calls/CallView'
 import { useIncomingCall } from '@/features/calls/useIncomingCall'
 import { initiateCall, endCall } from '@/features/calls/callsService'
 import { supabase } from '@/lib/supabase'
+
+// Голос и звонки тянут весь livekit-client (~800 КБ). Грузим их только
+// когда пользователь реально заходит в канал или принимает звонок —
+// иначе бандл парсится на старте и приложение открывается заметно дольше.
+const VoiceRoom = lazy(() =>
+  import('@/features/voice/VoiceRoom').then((m) => ({ default: m.VoiceRoom })),
+)
+const CallView = lazy(() =>
+  import('@/features/calls/CallView').then((m) => ({ default: m.CallView })),
+)
 
 // ── Тип главного вида ───────────────────────────────────────
 type MainView =
@@ -333,14 +341,16 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
 
         {/* Голосовой канал сервера */}
         {view.kind === 'voice-channel' && (
-          <VoiceRoom
-            roomName={view.room}
-            participantName={profile.display_name || profile.username}
-            onLeave={async () => {
-              await leaveVoiceChannel(view.channel.id, profile.id).catch(() => null)
-              setView({ kind: 'empty' })
-            }}
-          />
+          <Suspense fallback={<LazyVoiceFallback label="Подключение к каналу…" />}>
+            <VoiceRoom
+              roomName={view.room}
+              participantName={profile.display_name || profile.username}
+              onLeave={async () => {
+                await leaveVoiceChannel(view.channel.id, profile.id).catch(() => null)
+                setView({ kind: 'empty' })
+              }}
+            />
+          </Suspense>
         )}
 
         {/* Текстовый канал */}
@@ -372,14 +382,16 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
 
         {/* Звонок 1-на-1 */}
         {view.kind === 'call' && (
-          <CallView
-            callId={view.callId}
-            room={view.room}
-            profile={profile}
-            partner={view.partner}
-            role={view.role}
-            onEnd={() => void handleEndCall(view.callId)}
-          />
+          <Suspense fallback={<LazyVoiceFallback label="Соединение…" />}>
+            <CallView
+              callId={view.callId}
+              room={view.room}
+              profile={profile}
+              partner={view.partner}
+              role={view.role}
+              onEnd={() => void handleEndCall(view.callId)}
+            />
+          </Suspense>
         )}
 
         {/* Пустое состояние */}
@@ -486,8 +498,16 @@ export function AppShell({ profile, onSignOut }: AppShellProps) {
 }
 
 // ── Заголовок группы каналов ────────────────────────────────
-function GroupLabel({ children }: { children: React.ReactNode }) {
+function LazyVoiceFallback({ label }: { label: string }) {
   return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-ink-900">
+      <div className="size-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      <p className="text-sm text-fog-400">{label}</p>
+    </div>
+  )
+}
+
+function GroupLabel({ children }: { children: React.ReactNode }) {  return (
     <div className="flex items-center gap-1.5 px-2 pb-1.5 pt-3 text-[10.5px] font-bold uppercase tracking-[0.11em] text-fog-400">
       <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" className="opacity-60">
         <path d="M12 5l7 9H5z" />

@@ -57,27 +57,35 @@ export function useDmChannels(myId: string | null): UseDmChannelsResult {
       if (pErr) throw new Error(pErr.message)
       const peerMap = new Map((peers ?? []).map((p) => [p.id as string, p]))
 
-      // 3. Последние сообщения — по одному запросу на канал (их обычно немного)
-      const withLast = await Promise.all(
-        rows.map(async (dm) => {
-          const { data: last } = await supabase
-            .from('dm_messages')
-            .select('content,created_at')
-            .eq('channel_id', dm.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          const peerId = dm.participant_a === myId ? dm.participant_b : dm.participant_a
-          const peer = peerMap.get(peerId)
-          if (!peer) return null
-          return {
-            dm,
-            peer: peer as DmConversation['peer'],
-            lastMessage: (last?.content as string | undefined) ?? null,
-            lastMessageAt: (last?.created_at as string | undefined) ?? null,
-          } satisfies DmConversation
-        }),
-      )
+      // 3. Последние сообщения — одним запросом на все каналы сразу.
+      // Раньше здесь был запрос на каждый канал (N+1) — при десятке
+      // переписок старт растягивался на секунды.
+      const channelIds = rows.map((d) => d.id)
+      const { data: lastRows } = await supabase
+        .from('dm_messages')
+        .select('channel_id,content,created_at')
+        .in('channel_id', channelIds)
+        .order('created_at', { ascending: false })
+        .limit(Math.max(channelIds.length * 10, 100))
+
+      // Первое (самое свежее) сообщение по каждому каналу
+      const lastByChannel = new Map<string, { content: string; created_at: string }>()
+      for (const m of (lastRows ?? []) as Array<{ channel_id: string; content: string; created_at: string }>) {
+        if (!lastByChannel.has(m.channel_id)) lastByChannel.set(m.channel_id, m)
+      }
+
+      const withLast: DmConversation[] = rows.flatMap((dm) => {
+        const peerId = dm.participant_a === myId ? dm.participant_b : dm.participant_a
+        const peer = peerMap.get(peerId)
+        if (!peer) return []
+        const last = lastByChannel.get(dm.id)
+        return [{
+          dm,
+          peer: peer as DmConversation['peer'],
+          lastMessage: last?.content ?? null,
+          lastMessageAt: last?.created_at ?? null,
+        }]
+      })
 
       // 4. Сортировка: свежие переписки сверху
       const list = withLast
@@ -90,7 +98,7 @@ export function useDmChannels(myId: string | null): UseDmChannelsResult {
 
       if (!mountedRef.current) return
       setConversations(list)
-      cache.set(cacheKey(myId), list, 60_000)
+      cache.set(cacheKey(myId), list, 60_000, true)
       setError(null)
     } catch (e) {
       if (mountedRef.current) setError(e instanceof Error ? e.message : String(e))
@@ -105,21 +113,45 @@ export function useDmChannels(myId: string | null): UseDmChannelsResult {
     return () => { mountedRef.current = false }
   }, [refresh])
 
-  // Realtime: новые сообщения и новые DM-каналы обновляют список
+  // Realtime: новые сообщения и новые DM-каналы обновляют список.
+  // Подписка идёт без серверного фильтра (in.(...) тяжело держать
+  // актуальным), но событие отсекается на клиенте по списку своих каналов —
+  // иначе любое сообщение в системе перезагружало бы весь список.
+  const myChannelIdsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    myChannelIdsRef.current = new Set(conversations.map((c) => c.dm.id))
+  }, [conversations])
+
   useEffect(() => {
     if (!myId) return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const scheduleRefresh = () => {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        cache.invalidate(cacheKey(myId))
+        void refresh()
+      }, 250)
+    }
+
     const ch = supabase
       .channel(`dm-list-watch:${myId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'dm_messages' }, () => {
-        cache.invalidate(cacheKey(myId))
-        void refresh()
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'dm_channels' }, () => {
-        cache.invalidate(cacheKey(myId))
-        void refresh()
-      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_messages' },
+        (payload) => {
+          const channelId = (payload.new as { channel_id?: string })?.channel_id
+          // Сообщение из незнакомого канала — это либо новый диалог
+          // (придёт событие dm_channels), либо чужая переписка.
+          if (!channelId) return
+          if (myChannelIdsRef.current.size === 0) return
+          if (!myChannelIdsRef.current.has(channelId)) return
+          scheduleRefresh()
+        })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dm_channels' }, scheduleRefresh)
       .subscribe()
-    return () => { void supabase.removeChannel(ch) }
+
+    return () => {
+      if (timer) clearTimeout(timer)
+      void supabase.removeChannel(ch)
+    }
   }, [myId, refresh])
 
   return { conversations, loading, error, refresh }

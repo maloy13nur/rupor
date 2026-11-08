@@ -6,6 +6,8 @@ import {
   Track,
   VideoPresets,
   createLocalScreenTracks,
+  type RemoteTrack,
+  type RemoteTrackPublication,
   type LocalVideoTrack,
   type LocalParticipant,
   type RemoteParticipant,
@@ -44,6 +46,10 @@ export function useVoice(roomName: string, token: string): UseVoiceResult {
   // Счётчик форсирует перерисовку при смене активного спикера.
   const [, bump] = useReducer((n: number) => n + 1, 0)
   const roomRef = useRef<Room | null>(null)
+  const connectedRef = useRef(false)
+  // Входящие аудиотреки: LiveKit не выводит звук сам, трек нужно
+  // прикрепить к DOM-элементу <audio>. Ключ — trackSid.
+  const audioElsRef = useRef(new Map<string, { el: HTMLAudioElement; identity: string }>())
 
   useEffect(() => {
     let cancelled = false
@@ -79,8 +85,53 @@ export function useVoice(roomName: string, token: string): UseVoiceResult {
       setRemoteParticipants(Array.from(room.remoteParticipants.values()))
     }
 
+    // Участник-владелец трека: RemoteTrackPublication не отдаёт ссылку
+    // на участника, поэтому ищем по trackSid в списке удалённых.
+    const findOwnerIdentity = (r: Room, trackSid: string): string => {
+      for (const p of r.remoteParticipants.values()) {
+        for (const pub of p.trackPublications.values()) {
+          if (pub.trackSid === trackSid) return p.identity
+        }
+      }
+      return ''
+    }
+
+    // Аудиотрек собеседника нужно вручную прикрепить к <audio> —
+    // без этого звука нет вообще, хотя микрофон опубликован.
+    const attachRemoteAudio = (track: RemoteTrack, pub: RemoteTrackPublication) => {
+      if (cancelled) return
+      if (track.kind !== Track.Kind.Audio || pub.source === Track.Source.ScreenShareAudio) return
+      const sid = pub.trackSid
+      if (audioElsRef.current.has(sid)) return
+      const el = document.createElement('audio')
+      el.autoplay = true
+      el.setAttribute('playsinline', 'true')
+      el.dataset.participant = track.sid ?? sid
+      track.attach(el)
+      document.body.appendChild(el)
+      audioElsRef.current.set(sid, {
+        el,
+        identity: findOwnerIdentity(room, sid),
+      })
+      // Автовоспроизведение может быть заблокировано до первого клика —
+      // пробуем ещё раз, когда пользователь что-то нажмёт.
+      const resume = () => { void el.play().catch(() => {}) }
+      el.play().catch(() => { document.addEventListener('click', resume, { once: true }) })
+    }
+
+    const detachRemoteAudio = (_track: RemoteTrack, pub: RemoteTrackPublication) => {
+      const entry = audioElsRef.current.get(pub.trackSid)
+      if (!entry) return
+      entry.el.pause()
+      entry.el.srcObject = null
+      entry.el.remove()
+      audioElsRef.current.delete(pub.trackSid)
+    }
+
     room.on(RoomEvent.Connected, () => {
       if (cancelled) return
+      clearTimeout(connectGuard)
+      connectedRef.current = true
       patchEngineTimeout()
       setConnected(true)
       setConnecting(false)
@@ -131,6 +182,7 @@ export function useVoice(roomName: string, token: string): UseVoiceResult {
 
     room.on(RoomEvent.Disconnected, () => {
       if (cancelled) return
+      connectedRef.current = false
       setConnected(false)
       setLocalParticipant(null)
       setRemoteParticipants([])
@@ -141,22 +193,50 @@ export function useVoice(roomName: string, token: string): UseVoiceResult {
     room.on(RoomEvent.ParticipantConnected, syncPeers)
     room.on(RoomEvent.ParticipantDisconnected, syncPeers)
     room.on(RoomEvent.ActiveSpeakersChanged, bump)
-    room.on(RoomEvent.TrackSubscribed, bump)
-    room.on(RoomEvent.TrackUnsubscribed, bump)
+    room.on(RoomEvent.TrackSubscribed, (track, pub) => {
+      attachRemoteAudio(track, pub)
+      bump()
+    })
+    room.on(RoomEvent.TrackUnsubscribed, (track, pub) => {
+      detachRemoteAudio(track, pub)
+      bump()
+    })
     room.on(RoomEvent.LocalTrackPublished, bump)
     room.on(RoomEvent.LocalTrackUnpublished, bump)
 
+    // Участник вышел — снимаем его <audio>, иначе элементы копятся
+    room.on(RoomEvent.ParticipantDisconnected, (p) => {
+      for (const [sid, entry] of audioElsRef.current) {
+        if (entry.identity === p.identity) {
+          entry.el.pause(); entry.el.srcObject = null; entry.el.remove()
+          audioElsRef.current.delete(sid)
+        }
+      }
+    })
+
+    // Если соединение не поднялось за 25 с — показываем ошибку вместо
+    // бесконечного «Подключение…». Объявлен до connect(): обработчик
+    // Connected выше ссылается на него.
+    const connectGuard = setTimeout(() => {
+      if (cancelled || connectedRef.current) return
+      setError('Не удалось подключиться к голосовому серверу')
+      setConnecting(false)
+    }, 25_000)
+
     room.connect(LIVEKIT_URL, token, {
-      // UDP заблокирован провайдером — форсируем TURN-TCP/443.
-      // iceCandidatePoolSize: 2 собирает TURN-кандидатов заранее, чтобы
-      // publisher renegotiation (добавление mic-трека) не ждала аллокации TURN.
+      // Не форсируем relay: при `iceTransportPolicy: 'relay'` соединение
+      // устанавливается, только если сервер отдал рабочий TURN-кандидат.
+      // На сетях без TURN это даёт полный отказ, поэтому позволяем ICE
+      // самому выбрать прямой путь или TURN, если он есть.
+      // iceCandidatePoolSize собирает кандидатов заранее, чтобы публикация
+      // микрофона не ждала новой аллокации.
       rtcConfig: {
-        iceTransportPolicy: 'relay',
         iceCandidatePoolSize: 2,
       },
       peerConnectionTimeout: 60_000,
     }).catch((e: unknown) => {
       if (cancelled) return
+      clearTimeout(connectGuard)
       setError(e instanceof Error ? e.message : String(e))
       setConnecting(false)
     })
@@ -166,6 +246,10 @@ export function useVoice(roomName: string, token: string): UseVoiceResult {
       room.removeAllListeners()
       void room.disconnect()
       roomRef.current = null
+      for (const { el } of audioElsRef.current.values()) {
+        el.pause(); el.srcObject = null; el.remove()
+      }
+      audioElsRef.current.clear()
     }
   }, [roomName, token])
 

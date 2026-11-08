@@ -30,7 +30,8 @@ export function useServersTree(): UseServersTreeResult {
     try {
       const data = await fetchMyServers()
       if (!mountedRef.current) return
-      cache.set(CACHE_KEY, data, TTL)
+      // persist: дерево серверов нужно сразу на старте, заново с нуля
+      cache.set(CACHE_KEY, data, TTL, true)
       setServers(data)
       setError(null)
     } catch (e) {
@@ -66,16 +67,34 @@ export function useServersTree(): UseServersTreeResult {
       }, 300)
     }
 
-    const ch = supabase
-      .channel('servers-tree-watch')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'servers' }, scheduleRefresh)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, scheduleRefresh)
-      .subscribe()
+    let ch: ReturnType<typeof supabase.channel> | null = null
+    let alive = true
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!alive) return
+      const myId = session?.user.id
+      let channel = supabase.channel('servers-tree-watch')
+
+      // members без фильтра — это уведомление о каждом вступлении любого
+      // пользователя в любой сервер. Слушаем только свои членства.
+      if (myId) {
+        channel = channel.on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'members', filter: `user_id=eq.${myId}` },
+          scheduleRefresh,
+        )
+      }
+      channel = channel
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'servers' }, scheduleRefresh)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'channels' }, scheduleRefresh)
+        .subscribe()
+      ch = channel
+    })
 
     return () => {
+      alive = false
       if (debounceRef.current) clearTimeout(debounceRef.current)
-      void supabase.removeChannel(ch)
+      if (ch) void supabase.removeChannel(ch)
     }
   }, [doFetch])
 

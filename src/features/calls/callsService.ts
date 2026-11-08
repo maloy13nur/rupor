@@ -14,17 +14,32 @@ export interface Call {
   created_at: string
 }
 
+/**
+ * Завершает зависшие звонки между двумя пользователями.
+ * RPC может отсутствовать/упасть — тогда пробуем прямой UPDATE
+ * (RLS позволяет менять статус обоим участникам).
+ */
 async function clearStaleCalls(myId: string, calleeId: string): Promise<void> {
   const { data: stale } = await supabase
     .from('calls')
     .select('id')
-    .or(`caller_id.eq.${myId},callee_id.eq.${myId}`)
-    .or(`callee_id.eq.${calleeId},caller_id.eq.${calleeId}`)
     .in('status', ['ringing', 'active'])
+    .or(
+      `and(caller_id.eq.${myId},callee_id.eq.${calleeId}),` +
+      `and(caller_id.eq.${calleeId},callee_id.eq.${myId})`,
+    )
   if (!stale?.length) return
+
   await Promise.all(
-    stale.map(async (c) => {
-      try { await supabase.rpc('end_call', { p_call_id: c.id, p_status: 'ended' }) } catch { /* ignore */ }
+    stale.map(async ({ id }) => {
+      const { error } = await supabase.rpc('end_call', { p_call_id: id, p_status: 'ended' })
+      if (!error) return
+      // fallback: прямой UPDATE
+      await supabase
+        .from('calls')
+        .update({ status: 'ended', ended_at: new Date().toISOString() })
+        .eq('id', id)
+        .in('status', ['ringing', 'active'])
     }),
   )
 }

@@ -19,7 +19,9 @@ export interface ServerWithChannels {
 }
 
 export async function fetchMyServers(): Promise<ServerWithChannels[]> {
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession читает токен локально; getUser ходил бы в сеть на каждый вызов.
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
   if (!user) throw new GroupError('UNAUTHENTICATED', 'Нужно войти')
 
   const { data: memberRows, error: mErr } = await supabase
@@ -46,7 +48,8 @@ export async function fetchMyServers(): Promise<ServerWithChannels[]> {
 }
 
 export async function createServer(name: string): Promise<Server> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
   if (!user) throw new GroupError('UNAUTHENTICATED', 'Нужно войти')
 
   // INSERT без RETURNING: AFTER-триггер добавляет owner в members,
