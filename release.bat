@@ -44,32 +44,19 @@ if !errorlevel! neq 0 (
     exit /b 1
 )
 
-:: Write a temp JS file to avoid cmd.exe quoting issues with double-quotes.
-:: Uses a parenthesised block so ^" and ^( etc. are properly escaped.
-set TMPJS=%TEMP%\rupor_%RANDOM%.js
-(
-echo const fs = require^('fs'^);
-echo let s = fs.readFileSync^('src-tauri/tauri.conf.json', 'utf8'^);
-echo if ^(s.charCodeAt^(0^) === 0xFEFF^) s = s.slice^(1^);
-echo s = s.replace^(/^"version^":\s*^"[^^"]+^"/, '^"version^": ^"!VER!^"'^);
-echo fs.writeFileSync^('src-tauri/tauri.conf.json', s, 'utf8'^);
-) > "!TMPJS!"
-
-node "!TMPJS!"
-set NODEERR=!errorlevel!
-del "!TMPJS!" 2>nul
-if !NODEERR! neq 0 (
-    echo  ERROR: failed to patch tauri.conf.json.
+node scripts\bump-version.cjs !VER!
+if !errorlevel! neq 0 (
+    echo  ERROR: failed to patch tauri.conf.json / Cargo.toml.
     pause
     exit /b 1
 )
 
-echo    Done  — package.json + tauri.conf.json =^> !VER!
+echo    Done  package.json + tauri.conf.json + Cargo.toml =^> !VER!
 echo.
 
 :: ---- [2/4] Commit -------------------------------------------------------
 echo [2/4] Committing version bump...
-git add package.json package-lock.json src-tauri\tauri.conf.json
+git add package.json package-lock.json src-tauri\tauri.conf.json src-tauri\Cargo.toml
 git diff --cached --quiet
 if !errorlevel! equ 0 (
     echo    Nothing changed — skipping commit.
