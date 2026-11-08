@@ -1,6 +1,12 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+:: ============================================================
+::  release.bat  —  bump version and publish a new Rupor release
+::  Usage:  release.bat 0.3.0
+::  GitHub Actions builds the signed installer automatically.
+:: ============================================================
+
 if "%1"=="" (
     echo.
     echo  Usage:   release.bat ^<version^>
@@ -10,48 +16,63 @@ if "%1"=="" (
     exit /b 1
 )
 
-:: Strip leading "v" if user passed v0.3.0 instead of 0.3.0
+:: Normalize — strip leading v if user typed v0.3.0
 set VER=%1
 if /i "!VER:~0,1!"=="v" set VER=!VER:~1!
 set TAG=v!VER!
 
 echo.
-echo  === Rupor Release !TAG! ===
+echo  =========================================
+echo   Rupor Release !TAG!
+echo  =========================================
 echo.
 
-:: ---- Step 1: bump versions ----
-echo [1/5] Updating version in package.json and tauri.conf.json...
+:: ---- prereq check -------------------------------------------------------
+where git  >nul 2>&1 || ( echo  ERROR: git not found. Install Git for Windows.  & pause & exit /b 1 )
+where node >nul 2>&1 || ( echo  ERROR: node not found. Install Node.js.          & pause & exit /b 1 )
+where npm  >nul 2>&1 || ( echo  ERROR: npm not found.                            & pause & exit /b 1 )
+if not exist "package.json"              ( echo  ERROR: run this from the project root.    & pause & exit /b 1 )
+if not exist "src-tauri\tauri.conf.json" ( echo  ERROR: src-tauri\tauri.conf.json missing. & pause & exit /b 1 )
+
+:: ---- [1/4] Bump versions ------------------------------------------------
+echo [1/4] Bumping versions to !VER!...
+
 call npm version !VER! --no-git-tag-version --allow-same-version 2>nul
 if !errorlevel! neq 0 (
-    echo  ERROR: npm version failed.
+    echo  ERROR: "npm version !VER!" failed. Check that the version is valid semver.
     pause
     exit /b 1
 )
-node -e "const fs=require('fs');const p='src-tauri/tauri.conf.json';let s=fs.readFileSync(p,'utf8');if(s.charCodeAt(0)===0xFEFF)s=s.slice(1);s=s.replace(/\"version\":\s*\"[^\"]+\"/,'\"version\": \"!VER!\"');fs.writeFileSync(p,s,'utf8');"
-if !errorlevel! neq 0 (
-    echo  ERROR: failed to update tauri.conf.json.
-    pause
-    exit /b 1
-)
-echo    Done.
 
-:: ---- Step 2: build ----
-echo [2/5] Building app (this takes ~10 minutes)...
-call npm run tauri build
-if !errorlevel! neq 0 (
-    echo.
-    echo  Build failed! Fix errors and try again.
+:: Write a temp JS file to avoid cmd.exe quoting issues with double-quotes.
+:: Uses a parenthesised block so ^" and ^( etc. are properly escaped.
+set TMPJS=%TEMP%\rupor_%RANDOM%.js
+(
+echo const fs = require^('fs'^);
+echo let s = fs.readFileSync^('src-tauri/tauri.conf.json', 'utf8'^);
+echo if ^(s.charCodeAt^(0^) === 0xFEFF^) s = s.slice^(1^);
+echo s = s.replace^(/^"version^":\s*^"[^^"]+^"/, '^"version^": ^"!VER!^"'^);
+echo fs.writeFileSync^('src-tauri/tauri.conf.json', s, 'utf8'^);
+) > "!TMPJS!"
+
+node "!TMPJS!"
+set NODEERR=!errorlevel!
+del "!TMPJS!" 2>nul
+if !NODEERR! neq 0 (
+    echo  ERROR: failed to patch tauri.conf.json.
     pause
     exit /b 1
 )
-echo    Done.
 
-:: ---- Step 3: commit version bump ----
-echo [3/5] Committing version bump...
+echo    Done  — package.json + tauri.conf.json =^> !VER!
+echo.
+
+:: ---- [2/4] Commit -------------------------------------------------------
+echo [2/4] Committing version bump...
 git add package.json package-lock.json src-tauri\tauri.conf.json
 git diff --cached --quiet
 if !errorlevel! equ 0 (
-    echo    Nothing to commit, skipping.
+    echo    Nothing changed — skipping commit.
 ) else (
     git commit -m "chore: bump version to !VER!"
     if !errorlevel! neq 0 (
@@ -60,35 +81,48 @@ if !errorlevel! equ 0 (
         exit /b 1
     )
 )
+echo.
 
-:: ---- Step 4: tag ----
-echo [4/5] Creating tag !TAG!...
+:: ---- [3/4] Tag ----------------------------------------------------------
+echo [3/4] Creating tag !TAG!...
 git tag !TAG! 2>nul
 if !errorlevel! neq 0 (
-    echo    Tag !TAG! already exists locally, reusing.
+    echo  ERROR: tag !TAG! already exists locally.
+    echo.
+    echo  To re-release this version, delete the old tag first:
+    echo    git tag -d !TAG!
+    echo    git push origin :refs/tags/!TAG!
+    echo  Then run release.bat !VER! again.
+    pause
+    exit /b 1
 )
+echo    Done.
+echo.
 
-:: ---- Step 5: push ----
-echo [5/5] Pushing to GitHub...
+:: ---- [4/4] Push ---------------------------------------------------------
+echo [4/4] Pushing to GitHub...
 git push origin master
 if !errorlevel! neq 0 (
-    echo  ERROR: git push master failed. Check your connection and credentials.
+    echo  ERROR: push master failed. Check your internet connection and credentials.
     pause
     exit /b 1
 )
 git push origin !TAG!
 if !errorlevel! neq 0 (
-    echo  ERROR: git push tag !TAG! failed.
-    echo  Try:  git push origin :refs/tags/!TAG!  then run release.bat again.
+    echo  ERROR: push tag !TAG! failed.
     pause
     exit /b 1
 )
 
 echo.
-echo  Done! GitHub Actions is building the signed release.
-echo  Track progress: https://github.com/maloy13nur/rupor/actions
+echo  =========================================
+echo   Done!  GitHub Actions is now building.
+echo  =========================================
 echo.
-echo  Local installer ready at:
-echo    src-tauri\target\release\bundle\nsis\Rupor_!VER!_x64-setup.exe
+echo  Monitor progress:
+echo    https://github.com/maloy13nur/rupor/actions
+echo.
+echo  After CI finishes ^(~10 min^), the new version appears
+echo  as an update banner inside the running app.
 echo.
 pause
